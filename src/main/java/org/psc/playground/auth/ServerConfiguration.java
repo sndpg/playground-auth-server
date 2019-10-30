@@ -19,9 +19,14 @@ import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 
 /**
  * To create a jwt with this configuration, you need to provide a basic auth request with the client-id as user and the
- * client-secret as password upon invoking /auth/token.<br>
+ * client-secret as password upon invoking POST /auth/token.<p>
+ * <p>
  * Additionally you have to provide the grant_type=password, username=user and password=password (or other users from
  * the configured {@link AuthenticationManager}) as url-encoded form request parameters.
+ * </p>
+ * <p>
+ * An example request can be found under src/main/resources.
+ * </p>
  */
 @RequiredArgsConstructor
 @Configuration
