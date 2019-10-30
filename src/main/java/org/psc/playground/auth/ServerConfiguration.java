@@ -28,7 +28,6 @@ import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFacto
 
 import java.security.KeyPair;
 import java.util.Base64;
-import java.util.Map;
 
 /**
  * To create a jwt with this configuration, you need to provide a basic auth request with the client-id as user and the
