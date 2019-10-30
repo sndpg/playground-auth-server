@@ -24,4 +24,25 @@ public class PlaygroundAuthServerProperties {
      */
     private String redirectUris;
 
+    /**
+     * Path to keystore.jks
+     */
+    private String keyStorePath;
+
+    /**
+     * Password for keystore.jks
+     */
+    private String keyStorePassword;
+
+    /**
+     * Alias for self-signed key pair within the keyStore (selfsigned when generating with command from
+     * generatingCertificate_README.txt.
+     */
+    private String keyPairAlias;
+
+    /**
+     * Password for key pair (same as keyStorePassword, if not changed manually).
+     */
+    private String keyPairPassword;
+
 }
