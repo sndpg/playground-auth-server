@@ -11,11 +11,13 @@ import org.springframework.core.io.Resource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
 import org.springframework.security.oauth2.provider.ClientDetailsService;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.approval.TokenStoreUserApprovalHandler;
 import org.springframework.security.oauth2.provider.request.DefaultOAuth2RequestFactory;
 import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
@@ -26,6 +28,7 @@ import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFacto
 
 import java.security.KeyPair;
 import java.util.Base64;
+import java.util.Map;
 
 /**
  * To create a jwt with this configuration, you need to provide a basic auth request with the client-id as user and the
@@ -59,12 +62,11 @@ public class ServerConfiguration extends AuthorizationServerConfigurerAdapter {
         // @formatter:off
 			clients.inMemory().withClient(playgroundAuthServerProperties.getClientId())
 			 			.resourceIds("")
-                        .scopes("testScope")
                         .accessTokenValiditySeconds(60 * 10)
-                        .refreshTokenValiditySeconds(60* 30)
-			 			.authorizedGrantTypes("authorization_code", "password", "implicit")
+                        .refreshTokenValiditySeconds(60 * 30)
+			 			.authorizedGrantTypes("authorization_code", "password", "implicit", "refresh_token")
 			 			.authorities("ROLE_CLIENT")
-			 			.scopes("read", "write")
+			 			.scopes("read", "write", "test")
 			 			.secret(bCryptPasswordEncoder.encode(playgroundAuthServerProperties.getClientSecret()))
 						.redirectUris(playgroundAuthServerProperties.getRedirectUris())
      		        .and()
@@ -82,20 +84,18 @@ public class ServerConfiguration extends AuthorizationServerConfigurerAdapter {
     }
 
     @Bean
-    public DefaultTokenServices defaultTokenServices(TokenStore tokenStore, ClientDetailsService clientDetailsService){
-        // this bean doesn't seem to be used anywhere
-        // I implemented it, because I assumed it would trigger the creation of refresh tokens
+    public DefaultTokenServices defaultTokenServices(TokenStore tokenStore, ClientDetailsService clientDetailsService) {
         var defaultTokenServices = new DefaultTokenServices();
         defaultTokenServices.setTokenStore(tokenStore);
         defaultTokenServices.setSupportRefreshToken(true);
         defaultTokenServices.setClientDetailsService(clientDetailsService);
-        defaultTokenServices.setAuthenticationManager(authenticationManager);
-        return  defaultTokenServices;
+        defaultTokenServices.setTokenEnhancer(jwtAccessTokenConverter());
+        return defaultTokenServices;
     }
 
     @Bean
     public JwtAccessTokenConverter jwtAccessTokenConverter() {
-        var jwtAccessTokenConverter = new JwtAccessTokenConverter();
+        var jwtAccessTokenConverter = new PlaygroundJwtAccessTokenConverter();
         var keyPair = keyPair();
         log.info(Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
         // usage with MAC-Key instead of RSA key pair -> jwtAccessTokenConverter.setSigningKey(),,,
@@ -115,7 +115,7 @@ public class ServerConfiguration extends AuthorizationServerConfigurerAdapter {
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) {
         endpoints.tokenStore(tokenStore())
                 .userDetailsService(userDetailsService)
-                .accessTokenConverter(jwtAccessTokenConverter())
+                .tokenServices(defaultTokenServices(null, null))
                 .userApprovalHandler(tokenStoreUserApprovalHandler(null))
                 .authenticationManager(authenticationManager);
     }
@@ -133,6 +133,16 @@ public class ServerConfiguration extends AuthorizationServerConfigurerAdapter {
     private KeyStoreKeyFactory keyStoreKeyFactory() {
         return new KeyStoreKeyFactory(new ClassPathResource(playgroundAuthServerProperties.getKeyStorePath()),
                 playgroundAuthServerProperties.getKeyStorePassword().toCharArray());
+    }
+
+    private static class PlaygroundJwtAccessTokenConverter extends JwtAccessTokenConverter {
+        @Override
+        public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication){
+            var enrichedAccessToken = super.enhance(accessToken, authentication);
+            enrichedAccessToken.getAdditionalInformation().put("userInfo", "isTrusted");
+            return enrichedAccessToken;
+
+        }
     }
 
 }
