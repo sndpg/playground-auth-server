@@ -59,22 +59,22 @@ public class ServerConfiguration extends AuthorizationServerConfigurerAdapter {
     @Override
     public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
         // @formatter:off
-			clients.inMemory().withClient(playgroundAuthServerProperties.getClientId())
-			 			.resourceIds("")
-                        .accessTokenValiditySeconds(60 * 10)
-                        .refreshTokenValiditySeconds(60 * 30)
-			 			.authorizedGrantTypes("authorization_code", "password", "implicit", "refresh_token")
-			 			.authorities("ROLE_CLIENT")
-			 			.scopes("read", "write", "test")
-			 			.secret(bCryptPasswordEncoder.encode(playgroundAuthServerProperties.getClientSecret()))
-						.redirectUris(playgroundAuthServerProperties.getRedirectUris())
-     		        .and()
-		            .withClient("my-less-trusted-autoapprove-client")
-		                .authorizedGrantTypes("implicit")
-		                .authorities("ROLE_CLIENT")
-		                .scopes("read")
-		                .autoApprove(true);
-			// @formatter:on
+        clients.inMemory().withClient(playgroundAuthServerProperties.getClientId())
+                .resourceIds("")
+                .accessTokenValiditySeconds(60 * 10)
+                .refreshTokenValiditySeconds(60 * 30)
+                .authorizedGrantTypes("authorization_code", "password", "implicit", "refresh_token")
+                .authorities("ROLE_CLIENT")
+                .scopes("read", "write", "test")
+                .secret(bCryptPasswordEncoder.encode(playgroundAuthServerProperties.getClientSecret()))
+                .redirectUris(playgroundAuthServerProperties.getRedirectUris())
+            .and()
+            .withClient("my-less-trusted-autoapprove-client")
+                .authorizedGrantTypes("implicit")
+                .authorities("ROLE_CLIENT")
+                .scopes("read")
+                .autoApprove(true);
+        // @formatter:on
     }
 
     @Bean
@@ -136,7 +136,7 @@ public class ServerConfiguration extends AuthorizationServerConfigurerAdapter {
 
     private static class PlaygroundJwtAccessTokenConverter extends JwtAccessTokenConverter {
         @Override
-        public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication){
+        public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
             var enrichedAccessToken = super.enhance(accessToken, authentication);
             enrichedAccessToken.getAdditionalInformation().put("userInfo", "isTrusted");
             return enrichedAccessToken;
